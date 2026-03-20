@@ -6,6 +6,7 @@ from pathlib import Path
 
 import torch
 from torch.utils.data import Dataset
+from pykdtree.kdtree import KDTree
 
 from backbone.camera import CameraOptions, CameraHelper, make_cam_points, merge_cam_points
 from utils.cutils import grid_subsampling, grid_subsampling_test
@@ -139,11 +140,20 @@ class S3DIS(Dataset):
         idx //= self.loop
         xyz, col, lbl = self.datas[idx]
 
+        # 保留原始完整点云和标签
+        full_xyz = xyz.clone()
+        full_lbl = lbl.clone()
+
         indices = grid_subsampling_test(xyz, 0.04, 2.5 / 14, pick=pick)
         xyz = xyz[indices]
-        lbl = lbl[indices]
         col = col[indices].float()
         rgb = col.clone()
+
+        # 构建从原始点云到下采样点云的最近邻映射
+        # full_nn[i] 表示原始点云中第 i 个点对应的下采样点云中最近邻的索引
+        kdt = KDTree(xyz.numpy())
+        _, full_nn = kdt.query(full_xyz.numpy(), k=1)
+        full_nn = torch.from_numpy(full_nn.squeeze(-1)).long()
 
         col.mul_(1 / 250.)
         xyz -= xyz.min(dim=0)[0]
@@ -155,12 +165,28 @@ class S3DIS(Dataset):
         cam_helper.cam_points = make_cam_points(cam_helper.cam_points, self.k, self.grid_size,
                                                 None, up_sample=True, alpha=self.alpha)
         cam_helper.cam_points.__update_attr__('f', feature)
-        cam_helper.cam_points.__update_attr__('y', lbl)
+        cam_helper.cam_points.__update_attr__('y', lbl[indices])  # 下采样标签用于模型内部
         cam_helper.cam_points.__update_attr__('rgb', rgb)
-        return cam_helper.cam_points
+
+        # 返回 cam_points 以及用于完整评估的映射和标签
+        return cam_helper.cam_points, full_nn, full_lbl
 
 
 def s3dis_collate_fn(batch):
     cam_points_list = list(batch)
     new_cam_points = merge_cam_points(cam_points_list)
     return new_cam_points
+
+
+def s3dis_test_collate_fn(batch):
+    """测试时的 collate_fn，处理额外的 full_nn 和 full_lbl"""
+    cam_points_list = [item[0] for item in batch]
+    full_nn_list = [item[1] for item in batch]
+    full_lbl_list = [item[2] for item in batch]
+
+    new_cam_points = merge_cam_points(cam_points_list)
+    # batch_size=1 时直接取第一个
+    full_nn = full_nn_list[0]
+    full_lbl = full_lbl_list[0]
+
+    return new_cam_points, full_nn, full_lbl

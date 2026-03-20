@@ -15,7 +15,7 @@ from tqdm import tqdm
 
 from backbone import CamPointModel, SegSemHead, merge_cam_points
 from s3dis.configs import model_configs
-from s3dis.dataset import S3DIS, s3dis_collate_fn
+from s3dis.dataset import S3DIS, s3dis_collate_fn, s3dis_test_collate_fn
 from utils.config import EasyConfig
 from utils.logger import setup_logger_dist, format_dict, format_list
 from utils.metrics import Timer, AverageMeter, Metric
@@ -81,7 +81,7 @@ def warmup(cfg, model, test_loader):
     steps_per_epoch = 10
     pbar = tqdm(enumerate(test_loader), total=steps_per_epoch, desc='Warmup')
     i = 0
-    for idx, cam_points in pbar:
+    for idx, (cam_points, full_nn, full_lbl) in pbar:
         cam_points.to_cuda(non_blocking=True)
         with autocast():
             model(cam_points)
@@ -117,7 +117,7 @@ def main(cfg):
     test_loader = DataLoader(
         test_ds,
         batch_size=1,
-        collate_fn=s3dis_collate_fn,
+        collate_fn=s3dis_test_collate_fn,
         pin_memory=True,
         persistent_workers=True,
         num_workers=cfg.num_workers,
@@ -151,28 +151,50 @@ def main(cfg):
     steps_per_epoch = len(test_loader)
 
     warmup(cfg, model, test_loader)
+
+    # 累加预测的变量
+    cum = 0
+    cnt = 0
+    current_full_lbl = None
+
     pbar = tqdm(enumerate(test_loader), total=test_loader.__len__(), desc='Testing')
-    for idx, cam_points in pbar:
+    for idx, (cam_points, full_nn, full_lbl) in pbar:
         cam_points.to_cuda(non_blocking=True)
-        target = cam_points.y
+        full_nn = full_nn.cuda(non_blocking=True)
+
         timer.record(f'I{idx}')
         with autocast():
             pred = model(cam_points)
         time_cost = timer.record(f'I{idx}')
         timer_meter.update(time_cost)
-        m.update(pred, target)
-        pbar.set_description(f"Testing [{idx}/{steps_per_epoch}] "
-                             + f"mACC {m.calc_macc():.4f}")
+
+        # 将预测映射回原始点云并累加
+        cum = cum + pred[full_nn]
+        cnt += 1
+        current_full_lbl = full_lbl
+
+        # 每 loop 次完成一个完整场景的评估
+        if cnt % cfg.test_loop == 0:
+            current_full_lbl = current_full_lbl.cuda(non_blocking=True)
+            m.update(cum, current_full_lbl)
+            cum = 0
+            cnt = 0
+            current_full_lbl = None
+
+        pbar.set_description(f"Testing [{idx}/{steps_per_epoch}] mACC {m.calc_macc():.4f}")
+
         if writer is not None and idx % cfg.metric_freq == 0:
             writer.add_scalar('time_cost_avg', timer_meter.avg, idx)
             writer.add_scalar('time_cost', time_cost, idx)
-        if cfg.vis:
+
+        if cfg.vis and cnt == 0:
+            # 可视化时使用最后一次的下采样点云
             save_vis_results(
                 cfg,
-                f's3dis-{idx}',
+                f's3dis-{idx // cfg.test_loop}',
                 cam_points.p,
                 cam_points.__get_attr__('rgb'),
-                target,
+                cam_points.y,
                 pred,
             )
     acc, macc, miou, iou = m.calc()
@@ -198,7 +220,7 @@ if __name__ == '__main__':
 
     # for dataset
     parser.add_argument('--dataset', type=str, required=False, default='dataset_link')
-    parser.add_argument('--test_loop', type=int, required=False, default=1)
+    parser.add_argument('--test_loop', type=int, required=False, default=12)
     parser.add_argument('--test_area', type=str, required=False, default='5')
     parser.add_argument('--batch_size', type=int, required=False, default=32)
     parser.add_argument('--num_workers', type=int, required=False, default=16)
