@@ -4,10 +4,12 @@ import math
 import random
 from pathlib import Path
 
+import numpy as np
 import torch
 from torch.utils.data import Dataset
+from pykdtree.kdtree import KDTree
 
-from backbone.camera import CameraOptions, CameraHelper, make_cam_points, merge_cam_points
+from backbone.camera import CameraOptions, CameraHelper, calc_distance_scaler, make_cam_points, merge_cam_points
 from utils.cutils import grid_subsampling, grid_subsampling_test
 
 
@@ -139,11 +141,20 @@ class S3DIS(Dataset):
         idx //= self.loop
         xyz, col, lbl = self.datas[idx]
 
+        full_xyz = xyz.clone()
+        full_lbl = lbl.clone()
+
         indices = grid_subsampling_test(xyz, 0.04, 2.5 / 14, pick=pick)
         xyz = xyz[indices]
-        lbl = lbl[indices]
         col = col[indices].float()
         rgb = col.clone()
+
+        visible = np.zeros(xyz.shape[0], dtype=np.int8)
+        full_visible = np.zeros(full_xyz.shape[0], dtype=np.int8)
+        scaler = calc_distance_scaler(xyz)
+        kdt = KDTree(xyz.numpy(), visible)
+        _, full_nn = kdt.query(full_xyz.numpy(), full_visible, k=1, alpha=0., scaler=scaler)
+        full_nn = torch.from_numpy(full_nn).long()
 
         col.mul_(1 / 250.)
         xyz -= xyz.min(dim=0)[0]
@@ -155,12 +166,25 @@ class S3DIS(Dataset):
         cam_helper.cam_points = make_cam_points(cam_helper.cam_points, self.k, self.grid_size,
                                                 None, up_sample=True, alpha=self.alpha)
         cam_helper.cam_points.__update_attr__('f', feature)
-        cam_helper.cam_points.__update_attr__('y', lbl)
+        cam_helper.cam_points.__update_attr__('y', lbl[indices])
         cam_helper.cam_points.__update_attr__('rgb', rgb)
-        return cam_helper.cam_points
+
+        return cam_helper.cam_points, full_nn, full_lbl
 
 
 def s3dis_collate_fn(batch):
     cam_points_list = list(batch)
     new_cam_points = merge_cam_points(cam_points_list)
     return new_cam_points
+
+
+def s3dis_test_collate_fn(batch):
+    cam_points_list = [item[0] for item in batch]
+    full_nn_list = [item[1] for item in batch]
+    full_lbl_list = [item[2] for item in batch]
+
+    new_cam_points = merge_cam_points(cam_points_list)
+    full_nn = full_nn_list[0]
+    full_lbl = full_lbl_list[0]
+
+    return new_cam_points, full_nn, full_lbl
