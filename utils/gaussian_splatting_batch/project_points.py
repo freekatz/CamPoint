@@ -18,7 +18,7 @@ def project_points(
     Args:
         xyz (torch.Tensor): points, [M, N, 3] or [N, 3], M is camera numbers
         intr (torch.Tensor): camera intrinsics, [M, 4]
-        extr (torch.Tensor): camera pose, [M, 4, 4]
+        extr (torch.Tensor): OpenGL camera-to-world pose, [M, 4, 4]
         W (int): view width of camera field size.
         H (int): view height of camera field size.
         nearest (float, optional): nearest threshold for frustum culling, by default 0.2
@@ -43,8 +43,9 @@ def project_points(
     t = extr[:, :3, -1].unsqueeze(dim=-1)
 
     xyz_t = xyz.permute(0, 2, 1) if len(xyz.shape) == 3 else xyz.permute(1, 0)
-    pt_cam = torch.matmul(R, xyz_t)
-    pt_cam = pt_cam + t
+    pt_cam = torch.matmul(R.transpose(-1, -2), xyz_t - t)
+    # Convert OpenGL camera axes to x-right, y-down, z-forward.
+    pt_cam[:, 1:3, :] *= -1
     # Apply camera intrinsic matrix
     p_proj = torch.matmul(K[:, :], pt_cam)
 
@@ -58,7 +59,7 @@ def project_points(
     extent_mask_y = torch.logical_or(uv[:, :, 1] < (1 - extent) * H * 0.5,
                                      uv[:, :, 1] > (1 + extent) * H * 0.5)
     extent_mask = torch.logical_or(extent_mask_x, extent_mask_y)
-    mask = extent_mask
+    mask = torch.logical_or(extent_mask, depths <= 0)
     if nearest > 0:
         near_mask = depths <= nearest
         mask = torch.logical_or(near_mask, mask)

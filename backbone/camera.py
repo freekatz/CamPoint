@@ -419,7 +419,7 @@ class CameraHelper:
                 offset = torch.arange(0, cam_batch, 1, device=xyz.device)
                 uv, depths, visible = shelter_points(uv, depths, mW, mH, offset=offset, bucket=bucket)
             else:
-                visible = (depths != 0).int()
+                visible = (depths > 0).int()
 
             uv_all.append(uv)
             depths_all.append(depths)

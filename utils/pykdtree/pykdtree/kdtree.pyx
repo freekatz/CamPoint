@@ -17,7 +17,7 @@
 
 import numpy as np
 cimport numpy as np
-from libc.stdint cimport uint32_t, int8_t, uint8_t
+from libc.stdint cimport uint32_t, int32_t, int8_t, uint8_t
 cimport cython
 
 np.import_array()
@@ -57,14 +57,14 @@ cdef struct tree_double:
 
 cdef extern tree_float * construct_tree_float(float *pa, int8_t no_dims, uint32_t n, uint32_t bsp) nogil
 cdef extern void search_tree_float(tree_float *kdtree, float *pa, int8_t *code, float *point_coords, int8_t *query_code,
-                                   uint32_t num_points, uint32_t k, float alpha, float scaler, int8_t code_dims, float distance_upper_bound,
+                                   uint32_t num_points, uint32_t k, float alpha, float scaler, int32_t code_dims, float distance_upper_bound,
                                    float eps_fac, uint8_t *mask, uint32_t *closest_idxs,
                                    float *closest_dists) nogil
 cdef extern void delete_tree_float(tree_float *kdtree)
 
 cdef extern tree_double * construct_tree_double(double *pa, int8_t no_dims, uint32_t n, uint32_t bsp) nogil
 cdef extern void search_tree_double(tree_double *kdtree, double *pa, int8_t *code, double *point_coords, int8_t *query_code,
-                                    uint32_t num_points, uint32_t k, float alpha, float scaler, int8_t code_dims, double distance_upper_bound,
+                                    uint32_t num_points, uint32_t k, float alpha, float scaler, int32_t code_dims, double distance_upper_bound,
                                     double eps_fac, uint8_t *mask, uint32_t *closest_idxs, double *closest_dists) nogil
 cdef extern void delete_tree_double(tree_double *kdtree)
 
@@ -197,7 +197,7 @@ cdef class KDTree:
         else:
             q_ndim = query_pts.shape[1]
 
-        code_dims = query_code.shape[1]
+        cdef int32_t code_dims = query_code.shape[1]
 
         if self.ndim != q_ndim:
             raise ValueError('Data and query points must have same dimensions')

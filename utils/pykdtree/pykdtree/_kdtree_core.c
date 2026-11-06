@@ -90,17 +90,17 @@ Node_float * create_node_float(uint32_t start_idx, uint32_t n, int is_leaf);
 void delete_subtree_float(Node_float *root);
 void delete_tree_float(Tree_float *tree);
 void print_tree_float(Node_float *root, int level);
-float calc_dist_float(float *point1_coord, int8_t *code1, float *point2_coord, int8_t *code2, int8_t no_dims, int8_t code_dims, float alpha, float scaler);
+float calc_dist_float(float *point1_coord, int8_t *code1, float *point2_coord, int8_t *code2, int8_t no_dims, int32_t code_dims, float alpha, float scaler);
 float get_cube_offset_float(int8_t dim, float *point_coord, float *bbox);
 float get_min_dist_float(float *point_coord, int8_t no_dims, float *bbox);
 void search_leaf_float(float *restrict pa, uint32_t *restrict pidx, int8_t *restrict code, int8_t no_dims, uint32_t start_idx, uint32_t n, float *restrict point_coord,
-                            int8_t code_dims, int8_t *restrict query_code, uint32_t k, float alpha, float scaler, uint32_t *restrict closest_idx, float *restrict closest_dist);
+                            int32_t code_dims, int8_t *restrict query_code, uint32_t k, float alpha, float scaler, uint32_t *restrict closest_idx, float *restrict closest_dist);
 void search_leaf_float_mask(float *restrict pa, uint32_t *restrict pidx, int8_t *restrict code, int8_t no_dims, uint32_t start_idx, uint32_t n, float *restrict point_coord,
-                            int8_t code_dims, int8_t *restrict query_code, uint32_t k, float alpha, float scaler, uint8_t *mask, uint32_t *restrict closest_idx, float *restrict closest_dist);
-void search_splitnode_float(Node_float *root, float *pa, uint32_t *pidx, int8_t *code, int8_t no_dims, float *point_coord, int8_t code_dims,
+                            int32_t code_dims, int8_t *restrict query_code, uint32_t k, float alpha, float scaler, uint8_t *mask, uint32_t *restrict closest_idx, float *restrict closest_dist);
+void search_splitnode_float(Node_float *root, float *pa, uint32_t *pidx, int8_t *code, int8_t no_dims, float *point_coord, int32_t code_dims,
                       int8_t *query_code, float min_dist, uint32_t k, float alpha, float scaler, float distance_upper_bound, float eps, uint8_t *mask, uint32_t *  closest_idx, float *closest_dist);
 void search_tree_float(Tree_float *tree, float *pa, int8_t *code, float *point_coords, int8_t *query_code,
-                       uint32_t num_points, uint32_t k, float alpha, float scaler, int8_t code_dims, float distance_upper_bound,
+                       uint32_t num_points, uint32_t k, float alpha, float scaler, int32_t code_dims, float distance_upper_bound,
                        float eps_fac, uint8_t *mask, uint32_t *closest_idxs, float *closest_dists);
 
 
@@ -114,17 +114,17 @@ Node_double * create_node_double(uint32_t start_idx, uint32_t n, int is_leaf);
 void delete_subtree_double(Node_double *root);
 void delete_tree_double(Tree_double *tree);
 void print_tree_double(Node_double *root, int level);
-double calc_dist_double(double *point1_coord, int8_t *code1, double *point2_coord, int8_t *code2, int8_t no_dims, int8_t code_dims, float alpha, float scaler);
+double calc_dist_double(double *point1_coord, int8_t *code1, double *point2_coord, int8_t *code2, int8_t no_dims, int32_t code_dims, float alpha, float scaler);
 double get_cube_offset_double(int8_t dim, double *point_coord, double *bbox);
 double get_min_dist_double(double *point_coord, int8_t no_dims, double *bbox);
 void search_leaf_double(double *restrict pa, uint32_t *restrict pidx, int8_t *restrict code, int8_t no_dims, uint32_t start_idx, uint32_t n, double *restrict point_coord,
-                            int8_t code_dims, int8_t *restrict query_code, uint32_t k, float alpha, float scaler, uint32_t *restrict closest_idx, double *restrict closest_dist);
+                            int32_t code_dims, int8_t *restrict query_code, uint32_t k, float alpha, float scaler, uint32_t *restrict closest_idx, double *restrict closest_dist);
 void search_leaf_double_mask(double *restrict pa, uint32_t *restrict pidx, int8_t *restrict code, int8_t no_dims, uint32_t start_idx, uint32_t n, double *restrict point_coord,
-                            int8_t code_dims, int8_t *restrict query_code, uint32_t k, float alpha, float scaler, uint8_t *mask, uint32_t *restrict closest_idx, double *restrict closest_dist);
-void search_splitnode_double(Node_double *root, double *pa, uint32_t *pidx, int8_t *code, int8_t no_dims, double *point_coord, int8_t code_dims,
+                            int32_t code_dims, int8_t *restrict query_code, uint32_t k, float alpha, float scaler, uint8_t *mask, uint32_t *restrict closest_idx, double *restrict closest_dist);
+void search_splitnode_double(Node_double *root, double *pa, uint32_t *pidx, int8_t *code, int8_t no_dims, double *point_coord, int32_t code_dims,
                       int8_t *query_code, double min_dist, uint32_t k, float alpha, float scaler, double distance_upper_bound, double eps, uint8_t *mask, uint32_t *  closest_idx, double *closest_dist);
 void search_tree_double(Tree_double *tree, double *pa, int8_t *code, double *point_coords, int8_t *query_code,
-                       uint32_t num_points, uint32_t k, float alpha, float scaler, int8_t code_dims, double distance_upper_bound,
+                       uint32_t num_points, uint32_t k, float alpha, float scaler, int32_t code_dims, double distance_upper_bound,
                        double eps_fac, uint8_t *mask, uint32_t *closest_idxs, double *closest_dists);
 
 
@@ -494,7 +494,7 @@ Params:
     point1_coord : point 1
     point2_coord : point 2
 ************************************************/
-float calc_dist_float(float *point1_coord, int8_t *code1, float *point2_coord, int8_t *code2, int8_t no_dims, int8_t code_dims, float alpha, float scaler)
+float calc_dist_float(float *point1_coord, int8_t *code1, float *point2_coord, int8_t *code2, int8_t no_dims, int32_t code_dims, float alpha, float scaler)
 {
     /* Calculate squared distance */
     if (alpha > 1.0) {
@@ -514,10 +514,10 @@ float calc_dist_float(float *point1_coord, int8_t *code1, float *point2_coord, i
     }
 
     float dist2 = 0;
-    uint8_t visible_count1 = 0;
-    uint8_t visible_count2 = 0;
+    int32_t visible_count1 = 0;
+    int32_t visible_count2 = 0;
     if (alpha != 0) {
-        int8_t j;
+        int32_t j;
         for (j = 0; j < code_dims; j++)
         {
             if (code1[j] != 0) {
@@ -604,7 +604,7 @@ Params:
     closest_dist : distance to closest point (return)
 ************************************************/
 void search_leaf_float(float *restrict pa, uint32_t *restrict pidx, int8_t *restrict code, int8_t no_dims, uint32_t start_idx, uint32_t n, float *restrict point_coord,
-                            int8_t code_dims, int8_t *restrict query_code, uint32_t k, float alpha, float scaler, uint32_t *restrict closest_idx, float *restrict closest_dist)
+                            int32_t code_dims, int8_t *restrict query_code, uint32_t k, float alpha, float scaler, uint32_t *restrict closest_idx, float *restrict closest_dist)
 {
     float cur_dist;
     uint32_t i;
@@ -636,7 +636,7 @@ Params:
     closest_dist : distance to closest point (return)
 ************************************************/
 void search_leaf_float_mask(float *restrict pa, uint32_t *restrict pidx, int8_t *restrict code, int8_t no_dims, uint32_t start_idx, uint32_t n, float *restrict point_coord,
-                            int8_t code_dims, int8_t *restrict query_code, uint32_t k, float alpha, float scaler, uint8_t *mask, uint32_t *restrict closest_idx, float *restrict closest_dist)
+                            int32_t code_dims, int8_t *restrict query_code, uint32_t k, float alpha, float scaler, uint8_t *mask, uint32_t *restrict closest_idx, float *restrict closest_dist)
 
 {
     float cur_dist;
@@ -672,7 +672,7 @@ Params:
     closest_idx : index of closest data point found (return)
     closest_dist : distance to closest point (return)
 ************************************************/
-void search_splitnode_float(Node_float *root, float *pa, uint32_t *pidx, int8_t *code, int8_t no_dims, float *point_coord, int8_t code_dims,
+void search_splitnode_float(Node_float *root, float *pa, uint32_t *pidx, int8_t *code, int8_t no_dims, float *point_coord, int32_t code_dims,
                       int8_t *query_code, float min_dist, uint32_t k, float alpha, float scaler, float distance_upper_bound, float eps_fac,
                       uint8_t *mask, uint32_t *  closest_idx, float *closest_dist)
 {
@@ -771,7 +771,7 @@ Params:
     closest_dist : distance to closest point (return)
 ************************************************/
 void search_tree_float(Tree_float *tree, float *pa, int8_t *code, float *point_coords, int8_t *query_code,
-                       uint32_t num_points, uint32_t k, float alpha, float scaler, int8_t code_dims, float distance_upper_bound,
+                       uint32_t num_points, uint32_t k, float alpha, float scaler, int32_t code_dims, float distance_upper_bound,
                        float eps, uint8_t *mask, uint32_t *closest_idxs, float *closest_dists)
 {
     float min_dist;
@@ -1174,7 +1174,7 @@ Params:
     point1_coord : point 1
     point2_coord : point 2
 ************************************************/
-double calc_dist_double(double *point1_coord, int8_t *code1, double *point2_coord, int8_t *code2, int8_t no_dims, int8_t code_dims, float alpha, float scaler)
+double calc_dist_double(double *point1_coord, int8_t *code1, double *point2_coord, int8_t *code2, int8_t no_dims, int32_t code_dims, float alpha, float scaler)
 {
     /* Calculate squared distance */
     if (alpha > 1.0) {
@@ -1194,10 +1194,10 @@ double calc_dist_double(double *point1_coord, int8_t *code1, double *point2_coor
     }
 
     double dist2 = 0;
-    uint8_t visible_count1 = 0;
-    uint8_t visible_count2 = 0;
+    int32_t visible_count1 = 0;
+    int32_t visible_count2 = 0;
     if (alpha != 0) {
-        int8_t j;
+        int32_t j;
         for (j = 0; j < code_dims; j++)
         {
             if (code1[j] != 0) {
@@ -1284,7 +1284,7 @@ Params:
     closest_dist : distance to closest point (return)
 ************************************************/
 void search_leaf_double(double *restrict pa, uint32_t *restrict pidx, int8_t *restrict code, int8_t no_dims, uint32_t start_idx, uint32_t n, double *restrict point_coord,
-                            int8_t code_dims, int8_t *restrict query_code, uint32_t k, float alpha, float scaler, uint32_t *restrict closest_idx, double *restrict closest_dist)
+                            int32_t code_dims, int8_t *restrict query_code, uint32_t k, float alpha, float scaler, uint32_t *restrict closest_idx, double *restrict closest_dist)
 {
     double cur_dist;
     uint32_t i;
@@ -1316,7 +1316,7 @@ Params:
     closest_dist : distance to closest point (return)
 ************************************************/
 void search_leaf_double_mask(double *restrict pa, uint32_t *restrict pidx, int8_t *restrict code, int8_t no_dims, uint32_t start_idx, uint32_t n, double *restrict point_coord,
-                            int8_t code_dims, int8_t *restrict query_code, uint32_t k, float alpha, float scaler, uint8_t *mask, uint32_t *restrict closest_idx, double *restrict closest_dist)
+                            int32_t code_dims, int8_t *restrict query_code, uint32_t k, float alpha, float scaler, uint8_t *mask, uint32_t *restrict closest_idx, double *restrict closest_dist)
 {
     double cur_dist;
     uint32_t i;
@@ -1351,7 +1351,7 @@ Params:
     closest_idx : index of closest data point found (return)
     closest_dist : distance to closest point (return)
 ************************************************/
-void search_splitnode_double(Node_double *root, double *pa, uint32_t *pidx, int8_t *code, int8_t no_dims, double *point_coord, int8_t code_dims,
+void search_splitnode_double(Node_double *root, double *pa, uint32_t *pidx, int8_t *code, int8_t no_dims, double *point_coord, int32_t code_dims,
                       int8_t *query_code, double min_dist, uint32_t k, float alpha, float scaler, double distance_upper_bound, double eps_fac, uint8_t *mask, uint32_t *  closest_idx, double *closest_dist)
 {
     int8_t dim;
@@ -1449,7 +1449,7 @@ Params:
     closest_dist : distance to closest point (return)
 ************************************************/
 void search_tree_double(Tree_double *tree, double *pa, int8_t *code, double *point_coords, int8_t *query_code,
-                       uint32_t num_points, uint32_t k, float alpha, float scaler, int8_t code_dims, double distance_upper_bound,
+                       uint32_t num_points, uint32_t k, float alpha, float scaler, int32_t code_dims, double distance_upper_bound,
                        double eps, uint8_t *mask, uint32_t *closest_idxs, double *closest_dists)
 {
     double min_dist;
